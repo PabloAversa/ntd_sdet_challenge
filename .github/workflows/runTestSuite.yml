@@ -1,0 +1,22 @@
+# 
+name: Run Calculator Test Files
+
+on: workflow_dispatch
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Docker Pull
+      uses: docker/cli@v2
+      with:
+        args: pull public.ecr.aws/l4q9w4c5/loanpro-calculator-cli:latest
+    
+    - name: run tests
+      run: node run-all.js
+      
+
