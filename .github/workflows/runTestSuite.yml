@@ -11,10 +11,11 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v2
 
-    - name: Docker Pull
-      uses: docker/bake-action@v4
-      with:
-        args: pull public.ecr.aws/l4q9w4c5/loanpro-calculator-cli:latest
+    - name: Set up Docker
+      uses: docker/setup-buildx-action@v1
+      
+    - name: Pull Docker Image
+      run: docker pull public.ecr.aws/l4q9w4c5/loanpro-calculator-cli:latest
     
     - name: run tests
       run: node run-all.js
