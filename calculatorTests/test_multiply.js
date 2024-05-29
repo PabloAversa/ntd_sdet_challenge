@@ -1,42 +1,46 @@
-//import { exec } from 'child_process';
 const { exec } = require('child_process');
+const util = require('util');
+const execPromise = util.promisify(exec);
+const operations = require('../testData/operation_multiply.js')
 
+const docker_image = 'docker run --rm public.ecr.aws/l4q9w4c5/loanpro-calculator-cli';
+let countPositives = 0;
+let countNegatives = 0;
+let countErrors = 0;
+let status;
 
-const operations = [
-    
-    // Basic Arithmetic: positive, negative, mix
-    ['multiply', 40, 10, 400.0],
-    ['multiply', 10, 40, 400.0],
-    ['multiply', -2, -1, 2.0],
-    ['multiply', -2, 1, -2.0],
-    
-    // Decimal Arithmetic: positive, negative, mix 
-    ['multiply', 2.1, 0.1, 0.21 ], // 0.21000000000000002
-    ['multiply', -2.1, -0.1, 0.21 ], // 0.21000000000000002
-    ['multiply', 2.1, -0.1, -0.21 ], // -0.21000000000000002
-    
-    // Zero Values
-    ['multiply', 2, 0, 0.0 ],
-    ['multiply', 0, -2, 0.0 ],
+console.log('Starting tests..."MULTIPLY"');
 
-];
-
-operations.forEach(([operation, operand1, operand2, expected]) => {
-    const command = `docker run --rm public.ecr.aws/l4q9w4c5/loanpro-calculator-cli ${operation} ${operand1} ${operand2}`;
-    
-    exec(command,(error, stdout, stderr) => {
-        if (error) {
-            console.error(`Error executing command: ${command}`);
-            console.error(`Error: ${stderr}`);
-            return;
-        }
-     
-        let output = stdout.replace('Result:','').trim();
-        let status;
-
-        if (output == expected) status = 'Pass';
-        else status = 'Fail';
+const runCalTests = async () => {
+  
+    for (const [operation, operand1, operand2, expected] of operations) {
+      
+      const command = `${docker_image} ${operation} ${operand1} ${operand2}`;
+      
+      try {
+        const { stdout } = await execPromise(command);
+  
+        let output = parseFloat(stdout.replace('Result:', '').trim());
         
-        console.log(`Test ${operation} ${operand1} ${operand2} -> Expected: ${expected}, Actual: ${output}, Status: ${status}`);
-    });
-});
+        if (output === expected) {
+          countPositives++;
+        } else {
+          status = 'Fail';
+          countNegatives++;
+          console.log(`Test Failed Details--> ${operation} ${operand1} ${operand2} -> Expected: ${expected}, Actual: ${output}, Status: ${status}`);
+        }
+      } catch (error) {
+        console.error(`Error executing command: ${command}`);
+        console.error(`Error: ${error}`);
+        countErrors++;
+      }
+    }
+  
+    console.log(`\nTest Summary:`);
+    console.log(`Total Tests: ${operations.length}`);
+    console.log(`Passed: ${countPositives}`);
+    console.log(`Failed: ${countNegatives}`);
+    console.log(`Errors: ${countErrors}`);
+  };
+  
+  runCalTests();
